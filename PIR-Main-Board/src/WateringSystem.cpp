@@ -47,11 +47,11 @@ void WateringSystem::waterAfterHold(unsigned long holdTime, unsigned long waterT
     }
 }
 
-void WateringSystem::handleWaterWhilePressed(WateringSystem& system) {
+void WateringSystem::handleWaterWhilePressed(std::shared_ptr<Button> button, WateringSystem& system) {
     system.waterWhileButtonPressed();
 }
 
-void WateringSystem::handleWaterAfterHold(WateringSystem& system, unsigned long holdTime, unsigned long waterTime) {
+void WateringSystem::handleWaterAfterHold(std::shared_ptr<Button> button, WateringSystem& system, unsigned long holdTime, unsigned long waterTime) {
     system.waterAfterHold(holdTime, waterTime);
 }
 

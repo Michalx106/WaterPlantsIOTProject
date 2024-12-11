@@ -20,8 +20,13 @@ class Button : public std::enable_shared_from_this<Button>
     unsigned long getPressDuration();
     
     template <typename T, typename... Args>
-    static void LoopFunction(std::shared_ptr<Button> button, unsigned long interval, T func, Args... args);
+    static void LoopFunction(Button button, unsigned long interval, T func, Args... args)
+    {
+        button.state = button.CheckState();
+        button.timeBetweenClick = button.setNewTimeBetweenClicks();
 
+        if (button.timeBetweenClick >= interval && button.state) func(std::make_shared<Button>(button), args...);
+    }
 
     private:
     static std::vector<std::shared_ptr<Button>> instances;
@@ -36,5 +41,3 @@ class Button : public std::enable_shared_from_this<Button>
 
     unsigned long setNewTimeBetweenClicks();
 };
-
-std::vector<std::shared_ptr<Button>> Button::instances;

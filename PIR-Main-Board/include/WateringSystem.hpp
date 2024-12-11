@@ -14,8 +14,8 @@ public:
     void waterWhileButtonPressed();
     void waterAfterHold(unsigned long holdTime, unsigned long waterTime);
 
-    static void handleWaterWhilePressed(WateringSystem& system);
-    static void handleWaterAfterHold(WateringSystem& system, unsigned long holdTime, unsigned long waterTime);
+    static void handleWaterWhilePressed(std::shared_ptr<Button> button, WateringSystem& system);
+    static void handleWaterAfterHold(std::shared_ptr<Button> button, WateringSystem& system, unsigned long holdTime, unsigned long waterTime);
 
 private:
     uint8_t pumpPin;
