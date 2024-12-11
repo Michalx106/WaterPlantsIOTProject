@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <Adafruit_Sensor.h>
 #include "EspNowManager.hpp"
 #include "DataStruct.hpp"
 #include "SensorReader.hpp"
