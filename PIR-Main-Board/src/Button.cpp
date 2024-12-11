@@ -5,14 +5,19 @@ std::vector<std::shared_ptr<Button>> Button::instances;
 Button::Button(u_int8_t pinDefinition, u_int8_t mode)
 {
     pinNumber = pinDefinition;
-    mode = mode;
+    this->mode = mode;
     lastClick = millis();
+}
+
+void Button::registerInstance()
+{
     instances.push_back(shared_from_this());
 }
 
 bool Button::Init()
 {
     pinMode(pinNumber, mode);
+    registerInstance();
     return true;
 }
 
@@ -50,11 +55,9 @@ unsigned long Button::getPressDuration()
     unsigned long pressDuration = 0;
 
     if (currentState && !isPressed) {
-        // Rozpoczęcie wciśnięcia
         pressStartTime = millis();
         isPressed = true;
     } else if (!currentState && isPressed) {
-        // Zakończenie wciśnięcia
         pressDuration = millis() - pressStartTime;
         isPressed = false;
     }

@@ -8,6 +8,7 @@ class Button : public std::enable_shared_from_this<Button>
     public:
     Button(u_int8_t pinDefinition, u_int8_t mode);
 
+    void registerInstance();
     bool Init();
     static bool InitAll();
     bool CheckState();

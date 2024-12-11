@@ -8,6 +8,7 @@ EspNowManager::EspNowManager()
       dataSentCallback(std::make_shared<OnDataSentCallback>(nullptr)) {}
 
 bool EspNowManager::begin() {
+    
     WiFi.mode(WIFI_STA);
     if (esp_now_init() != ESP_OK) {
         Serial.println("Błąd inicjalizacji ESP-NOW");
@@ -19,16 +20,24 @@ bool EspNowManager::begin() {
 }
 
 void EspNowManager::onReceive(OnDataReceivedCallback callback) {
-    *dataReceivedCallback = callback;
-    staticDataReceivedCallback = dataReceivedCallback;
+    if (callback) {
+        *dataReceivedCallback = callback;
+        staticDataReceivedCallback = dataReceivedCallback;
+    }
 }
 
 void EspNowManager::onSend(OnDataSentCallback callback) {
-    *dataSentCallback = callback;
-    staticDataSentCallback = dataSentCallback;
+    if (callback) {
+        *dataSentCallback = callback;
+        staticDataSentCallback = dataSentCallback;
+    }
 }
 
 bool EspNowManager::addPeer(const uint8_t *peerAddress) {
+    if (!peerAddress) {
+        Serial.println("Nieprawidłowy adres peer");
+        return false;
+    }
     esp_now_peer_info_t peerInfo = {};
     memcpy(peerInfo.peer_addr, peerAddress, 6);
     peerInfo.channel = 0;

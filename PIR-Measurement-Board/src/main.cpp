@@ -10,7 +10,7 @@
 #define VOLTAGE_PIN 34
 #define SLEEP_TIME_US 10 * 60 * 100000ULL // Czas uśpienia w mikrosekundach (1 minuta)
 
-uint8_t peerAddress[] = {0x24, 0x6F, 0x28, 0x28, 0x28, 0x28}; // Wprowadź poprawny adres MAC
+uint8_t peerAddress[] = {0x10, 0x06, 0x1C, 0x82, 0xF7, 0xD0}; // Wprowadź poprawny adres MAC
 
 EspNowManager espNowManager;
 SensorData sensorData;

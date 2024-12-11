@@ -28,9 +28,8 @@ void setup() {
 }
 
 void loop() {
-  Button::LoopFunction(*button, 3000, WateringSystem::handleWaterWhilePressed, *wateringSystem);
-  Button::LoopFunction(*button, 3000, WateringSystem::handleWaterAfterHold, *wateringSystem, 3000, 30000);
-  
+    Button::LoopFunction(*button, 3000, WateringSystem::handleWaterWhilePressed, *wateringSystem);
+    Button::LoopFunction(*button, 3000, WateringSystem::handleWaterAfterHold, *wateringSystem, 3000, 30000);
 }
 
 void onDataReceived(const uint8_t *macAddr, const uint8_t *data, int len) {

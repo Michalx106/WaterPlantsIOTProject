@@ -16,7 +16,7 @@ void WateringSystem::begin() {
 }
 
 void WateringSystem::waterWhileButtonPressed() {
-    button->CheckState() ? digitalWrite(button->getPinNumber(), HIGH) : digitalWrite(button->getPinNumber(), LOW);
+    digitalWrite(pumpPin, button->CheckState() ? HIGH : LOW);
 }
 
 void WateringSystem::waterAfterHold(unsigned long holdTime, unsigned long waterTime) {
