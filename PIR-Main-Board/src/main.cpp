@@ -29,13 +29,14 @@ BlynkTimer timer;
 void onDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len) {
     SensorDataManager data;
     memcpy(&data, incomingData, sizeof(SensorDataManager));
-    sensorData.update(data.temperature, data.humidity, data.soilMoisture, data.voltage);
+    sensorData.update(data.temperature, data.humidity, sensorData.soilMoisture, sensorData.voltage);
 }
 
 // Funkcja Blynk: Uruchomienie podlewania z aplikacji
 BLYNK_WRITE(V1) {
     int value = param.asInt();
     if (value == 1 && !pump.isRunning()) {
+        Blynk.virtualWrite(V6, 1); // Wyślij status pompy do Blynk
         lcd.clear();
         lcd.printMessage("Blynk Watering");
         pump.start();
@@ -50,12 +51,17 @@ void sendSensorDataToBlynk() {
     Blynk.virtualWrite(V5, sensorData.voltage);
 }
 
+// Funkcja aktualizująca status pompy w Blynk
+void updatePumpStatusInBlynk() {
+    if (pump.isRunning()) {
+        Blynk.virtualWrite(V6, 1); // Pompa włączona
+    } else {
+        Blynk.virtualWrite(V6, 0); // Pompa wyłączona
+    }
+}
+
 void setup() {
     Serial.begin(115200);
-
-    // Inicjalizacja LCD
-    lcd.init();
-    lcd.printMessage("Ready!");
 
     // Inicjalizacja przycisku i pompy
     button.init();
@@ -76,6 +82,11 @@ void setup() {
     // Inicjalizacja Blynk
     Blynk.begin(auth, ssid, pass);
     timer.setInterval(2000L, sendSensorDataToBlynk); // Wysyłanie danych co 2 sekundy
+    timer.setInterval(1000L, updatePumpStatusInBlynk); // Aktualizacja statusu pompy co 1 sekundę
+
+    // Inicjalizacja LCD
+    lcd.init();
+    lcd.printMessage("Ready!");
 }
 
 void loop() {
@@ -89,8 +100,10 @@ void loop() {
             lcd.clear();
             lcd.printMessage("Testing...");
             pump.start();
+            Blynk.virtualWrite(V6, 1); // Aktualizacja statusu pompy w Blynk
             delay(500);
             pump.stop();
+            Blynk.virtualWrite(V6, 0); // Aktualizacja statusu pompy w Blynk
             lcd.clear();
             lcd.printMessage("Testing done");
             delay(1000);
@@ -99,6 +112,7 @@ void loop() {
             lcd.clear();
             lcd.printMessage("Watering...");
             pump.start();
+            Blynk.virtualWrite(V6, 1); // Aktualizacja statusu pompy w Blynk
         }
     }
 
@@ -106,6 +120,7 @@ void loop() {
         unsigned long elapsed = pump.getElapsedTime();
         if (elapsed >= 30) {
             pump.stop();
+            Blynk.virtualWrite(V6, 0); // Aktualizacja statusu pompy w Blynk
             lcd.clear();
             lcd.printMessage("Watering done", 1);
             delay(2000);
@@ -127,5 +142,6 @@ void loop() {
         lcd.clear();
         lcd.printMessage("Auto Watering", 1);
         pump.start();
+        Blynk.virtualWrite(V6, 1); // Aktualizacja statusu pompy w Blynk
     }
 }
