@@ -18,8 +18,8 @@ PumpManager pump(PUMP_PIN);
 SensorDataManager sensorData;
 
 char auth[] = "sb2Uqu8duDhkVwn1YDFb0PjmmZv2fWb0";
-char ssid[] = "Eldorado";
-char pass[] = "Kowieski08110";
+char ssid[] = "dlinkjarka";
+char pass[] = "1230984567";
 
 BlynkTimer timer;
 

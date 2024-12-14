@@ -19,4 +19,5 @@ public:
     SensorManager(int dhtPin, int dhtType, int soilPin, int voltagePin);
     void begin();
     SensorData readSensors();
+    void printSensorData(const SensorData &data); // Nowa funkcja do wypisywania danych
 };

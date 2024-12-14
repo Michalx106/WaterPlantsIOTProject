@@ -22,6 +22,24 @@ void ESPNowManager::begin() {
 }
 
 bool ESPNowManager::sendData(const SensorData &data) {
-    esp_err_t result = esp_now_send(peerAddress, (uint8_t *)&data, sizeof(SensorData));
-    return result == ESP_OK;
+    const int maxRetries = 3;
+    int attempt = 0;
+    esp_err_t result;
+
+    do {
+        attempt++;
+        Serial.printf("Wysyłanie danych, próba %d...\n", attempt);
+        result = esp_now_send(peerAddress, (uint8_t *)&data, sizeof(SensorData));
+
+        if (result == ESP_OK) {
+            Serial.println("Dane wysłane pomyślnie.");
+            return true;
+        } else {
+            Serial.println("Błąd wysyłania danych.");
+            delay(500);
+        }
+    } while (attempt < maxRetries);
+
+    Serial.println("Nie udało się wysłać danych po maksymalnej liczbie prób.");
+    return false;
 }

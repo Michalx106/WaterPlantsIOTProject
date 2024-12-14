@@ -7,7 +7,7 @@
 #define DHT_TYPE DHT11
 #define SOIL_MOISTURE_PIN 34
 #define VOLTAGE_PIN 35
-#define SLEEP_TIME_US 1 * 60 * 100000ULL // 1 minuta w mikrosekundach
+#define SLEEP_TIME_US 10 * 60 * 100000ULL // 1 minuta w mikrosekundach
 
 uint8_t peerAddress[] = {0x10, 0x06, 0x1C, 0x82, 0xF7, 0xD0};
 
@@ -22,12 +22,9 @@ void setup() {
     espNowManager.begin();
 
     SensorData data = sensorManager.readSensors();
+    sensorManager.printSensorData(data);
 
-    if (espNowManager.sendData(data)) {
-        Serial.println("Dane wysłane pomyślnie.");
-    } else {
-        Serial.println("Błąd wysyłania danych.");
-    }
+    espNowManager.sendData(data);
 
     deepSleepManager.enterDeepSleep();
 }
