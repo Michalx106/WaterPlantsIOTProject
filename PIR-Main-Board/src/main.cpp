@@ -1,8 +1,8 @@
+#include "ESPNowManager.hpp"
 #include "LCDManager.hpp"
 #include "ButtonManager.hpp"
 #include "PumpManager.hpp"
 #include "SensorDataManager.hpp"
-#include <esp_now.h>
 #include <esp_wifi.h>
 #include <WiFi.h>
 
@@ -13,29 +13,53 @@
 #define BLYNK_TEMPLATE_NAME "PIR centralka"
 #include <BlynkSimpleEsp32.h>
 
-// Inicjalizacja LCD, przycisku, pompy i czujników
+// Inicjalizacja klas zarządzających
 LCDManager lcd(0x27, 16, 2);
 ButtonManager button(BUTTON_PIN);
 PumpManager pump(PUMP_PIN);
 SensorDataManager sensorData;
+ESPNowManager espNowManager;
+static unsigned long lastReceivedTime = 0;
+
+void sendSensorDataToBlynk();
 
 // Dane logowania Blynk
 char auth[] = "sb2Uqu8duDhkVwn1YDFb0PjmmZv2fWb0";
-char ssid[] = "dlinkjarka";
-char pass[] = "1230984567";
+char ssid[] = "Eldorado";
+char pass[] = "Kowieski08110";
 
-BlynkTimer timer;
+// Struktura dla ESP-NOW
+typedef struct struct_message {
+    float temperature;
+    float humidity;
+    float soilMoisture;
+    float voltage;
+} struct_message;
 
-// Funkcja callback do odbierania danych ESP-NOW
-void onDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len) {
-    SensorDataManager data;
-    memcpy(&data, incomingData, sizeof(SensorDataManager));
-    sensorData.update(data.temperature, data.humidity, sensorData.soilMoisture, sensorData.voltage);
+struct_message incomingData;
+
+// Callback odbioru danych ESP-NOW
+void onDataRecv(const uint8_t *mac, const uint8_t *incomingDataRaw, int len) {
+    memcpy(&incomingData, incomingDataRaw, sizeof(incomingData));
+
+    // Aktualizacja sensorData
+    sensorData.update(incomingData.temperature, incomingData.humidity, incomingData.soilMoisture, incomingData.voltage);
     sensorData.printSensorData();
+    lastReceivedTime = millis();
+
     Serial.println("ESP-NOW data received and updated.");
+    sendSensorDataToBlynk();
 }
 
-// Obsługa przycisku w Blynk do uruchamiania pompy
+// Funkcja wysyłania danych do Blynk
+void sendSensorDataToBlynk() {
+    Blynk.virtualWrite(V2, sensorData.temperature);
+    Blynk.virtualWrite(V3, sensorData.humidity);
+    Blynk.virtualWrite(V4, sensorData.soilMoisture);
+    Blynk.virtualWrite(V5, sensorData.voltage);
+    Serial.println("Sensor data sent to Blynk.");
+}
+
 BLYNK_WRITE(V1) {
     int value = param.asInt();
     if (value == 1 && !pump.isRunning()) {
@@ -47,25 +71,12 @@ BLYNK_WRITE(V1) {
     }
 }
 
-// Funkcja do wysyłania danych czujników do Blynk
-void sendSensorDataToBlynk() {
-    Blynk.virtualWrite(V2, sensorData.temperature);
-    Blynk.virtualWrite(V3, sensorData.humidity);
-    Blynk.virtualWrite(V4, sensorData.soilMoisture);
-    Blynk.virtualWrite(V5, sensorData.voltage);
-    Serial.println("Sensor data sent to Blynk.");
-}
-
-// Aktualizacja statusu pompy w Blynk
-void updatePumpStatusInBlynk() {
-    Blynk.virtualWrite(V6, pump.isRunning() ? 1 : 0);
-}
-
 void setup() {
     Serial.begin(115200);
 
     // Inicjalizacja LCD
     lcd.init();
+    lcd.clear();
     lcd.printMessage("Ready!");
 
     // Inicjalizacja przycisku i pompy
@@ -73,7 +84,7 @@ void setup() {
     pump.init();
 
     // Ustawienie progów alarmowych
-    sensorData.setFrostThreshold(-2);
+    sensorData.setFrostThreshold(12);
     sensorData.setDrySoilThreshold(25);
 
     // Konfiguracja Wi-Fi
@@ -85,30 +96,28 @@ void setup() {
     }
     Serial.println("\nWi-Fi Connected");
 
-    // Konfiguracja ESP-NOW
-    if (esp_now_init() != ESP_OK) {
-        Serial.println("Error initializing ESP-NOW.");
-        return;
+    // Inicjalizacja ESP-NOW za pomocą klasy
+    if (!espNowManager.begin(onDataRecv)) {
+        while (1);
     }
-    esp_now_register_recv_cb(onDataRecv);
-    esp_wifi_set_ps(WIFI_PS_NONE); // Wyłącz oszczędzanie energii dla ESP-NOW
-    esp_wifi_set_channel(1, WIFI_SECOND_CHAN_NONE);
 
     // Inicjalizacja Blynk
     Blynk.begin(auth, ssid, pass);
-    timer.setInterval(20000L, sendSensorDataToBlynk); // Wysyłanie danych do Blynk co 2 sekundy
-    timer.setInterval(10000L, updatePumpStatusInBlynk); // Aktualizacja statusu pompy co 1 sekundę
+
+    // Wyłączenie oszczędzania energii
+    esp_wifi_set_ps(WIFI_PS_NONE);
+    Serial.print("Wi-Fi Channel: ");
+    Serial.println(WiFi.channel());
 
     Serial.println("Setup complete.");
 }
 
 void loop() {
     Blynk.run();
-    timer.run();
 
     unsigned long pressDuration = button.getPressDuration();
 
-    // Obsługa ręcznego przycisku do uruchamiania pompy
+    // Obsługa przycisku do uruchamiania pompy
     if (pressDuration > 0) {
         if (pressDuration < 3000) { // Krótkie naciśnięcie
             lcd.clear();
@@ -149,7 +158,7 @@ void loop() {
         }
     }
 
-    // Automatyczne podlewanie w przypadku suchej gleby
+    // Automatyczne podlewanie przy suchej glebie
     if (sensorData.isDrySoil() && !pump.isRunning()) {
         lcd.clear();
         lcd.printMessage("Auto Watering", 1);
@@ -157,4 +166,29 @@ void loop() {
         Blynk.virtualWrite(V6, 1);
         Serial.println("Auto watering triggered.");
     }
+
+    if(!pump.isRunning())
+    {
+        lcd.clear();
+        lcd.printMessage("Temp: " + String((int)sensorData.temperature) + " Hum:" + String((int)sensorData.humidity) + "%", 0);
+        if (millis() - lastReceivedTime > 100000) 
+        {
+            lcd.printMessage("No data!", 1);
+        } else if (sensorData.isFrostAlert()) {
+            if (millis() % 1000 < 500) {
+                lcd.printMessage("Frost Alert!", 1);
+            } else {
+                lcd.printMessage("                ", 1);
+            }
+        } else if (sensorData.isDrySoil()) {
+            if (millis() % 1000 < 500) {
+                lcd.printMessage("Dry Soil!", 1);
+            } else {
+            lcd.printMessage("                ", 1);
+            }   
+        } else {
+            lcd.printMessage("                ", 1);
+        }
+    }
+    delay(500);
 }
