@@ -20,7 +20,7 @@ void LCDManager::printMessage(const String &message, int line) {
 }
 
 void LCDManager::scrollText(const String &text, int line) {
-    if (millis() - lastScrollTime > 300) {
+    if (millis() - lastScrollTime > 800) {
         lastScrollTime = millis();
         int textLength = text.length();
         lcd.setCursor(0, line);
