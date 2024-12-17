@@ -19,4 +19,5 @@ public:
     bool isDrySoil();
     void setFrostThreshold(float threshold);
     void setDrySoilThreshold(float threshold);
+    void printSensorData();
 };
